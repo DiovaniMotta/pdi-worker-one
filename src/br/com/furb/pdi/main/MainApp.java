@@ -9,18 +9,7 @@ import org.opencv.imgproc.Imgproc;
 public class MainApp {
 
 	public static void main(String[] args) {
-		System.out.println("Oi");
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		/*
-		 * VideoCapture camera = new VideoCapture(0);
-		 * 
-		 * if(!camera.isOpened()){ System.out.println("Erro"); } else { Mat
-		 * frame = new Mat(); camera.read(frame); while(true){
-		 * if(camera.read(frame)){ System.out.println("Width " + frame.width() +
-		 * ", height " + frame.height());
-		 * Imgcodecs.imwrite("/pdi-worker-one/images/imagem1.jpg", frame);
-		 * break; } } } camera.release();
-		 */
 		/**
 		 * 1°) As imagens contendo as feições de interesse foram submetidas
 		 * primeiramente à etapa de pré-processamento, na qual foram utilizados
@@ -31,7 +20,7 @@ public class MainApp {
 		Mat im1 = Imgcodecs.imread(
 				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/imagem1.jpg");
 		Mat res = new Mat();
-		Imgproc.threshold(im1, res, 70, 255, 0);
+		Imgproc.threshold(im1, res, 70, 70, Imgproc.THRESH_TOZERO);
 		Imgcodecs.imwrite(
 				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/passeOne.jpg",
 				res);
@@ -41,7 +30,14 @@ public class MainApp {
 		 * estipulado, removendo ruídos aleatórios distribuídos na imagem.O que
 		 * se mostrou mais adequado para a área de estudo foi 10;
 		 */
-
+		im1 = Imgcodecs.imread(
+				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/passeOne.jpg");
+		res = new Mat();
+		Imgproc.threshold(im1, res, 10, 10, Imgproc.THRESH_TOZERO);
+		Imgcodecs.imwrite(
+				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/passeOneLimiar10.jpg",
+				res);
+		
 		/**
 		 * - Na seqüência, aplicou-se o operador mmhbasin, com limiar 20 para
 		 * cada imagem. Este operador tem a função de remover valores com
@@ -50,18 +46,25 @@ public class MainApp {
 		 * 
 		 */
 		Mat passeOne = Imgcodecs.imread(
-				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/passeOne.jpg");
+				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/passeOneLimiar10.jpg");
 		Mat passeOneLimiar = new Mat();
-		Imgproc.threshold(passeOne, passeOneLimiar, 20, 255, 0);
+		Imgproc.threshold(passeOne, passeOneLimiar, 20, 20, Imgproc.THRESH_TOZERO);
 		Imgcodecs.imwrite(
-				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/passeOneLimiar.jpg",
+				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/passeOneLimiar20.jpg",
 				passeOneLimiar);
 		/**
 		 * - Em seguida, a operação de gradiente foi aplicada, aumentando a
 		 * variação de tons de cinza nas bordas das crateras.
 		 * 
 		 */
-
+		Mat filtrado = new Mat();
+		Mat kernel = new Mat(1, 3, CvType.CV_64F);
+		double[] kernel_v = { -1.0, 2, -1.0 };
+		kernel.put(0, 0, kernel_v);
+		Imgproc.filter2D(passeOneLimiar, filtrado, -1, kernel);
+		Imgcodecs.imwrite(
+				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/marte.jpg",
+				filtrado);
 		/**
 		 * 2º) Em seguida as imagens foram binarizadas, utilizando o operador
 		 * mmbinary - as imagens foram binarizadas com limiar 32. Os valores de
@@ -70,7 +73,12 @@ public class MainApp {
 		 * acima desse limiar receberam valor 1 (branco)
 		 * 
 		 */
-
+		Mat binary = new Mat();
+		Imgproc.threshold(filtrado, binary, 32, 32, Imgproc.THRESH_BINARY);
+		Imgcodecs.imwrite(
+				"C:/Users/User/Desktop/Diovani/Faculdade/Processamento de Imagem/pdi-worker-one/images/binary.jpg",
+				binary);
+		
 		/**
 		 * 3°) Na seqüência, aplicou-se o operador mmclose, que preencheu alguns
 		 * pequenos ruídos presentes no interior da feição - Visando então,
@@ -80,9 +88,11 @@ public class MainApp {
 		 * estruturante utilizado foi o disco com raio 2
 		 * 
 		 */
-		Mat kernel = Mat.ones(2, 2, CvType.CV_8UC1);
-		Mat dst = new Mat(img.size(), img.type());
-		Imgproc.morphologyEx(img, dst, Imgproc.MORPH_CLOSE, kernel);
+		/*Mat filtrado = new Mat();
+		Mat kernel = new Mat(1, 3, CvType.CV_64F);
+		double[] kernel_v = { -1.0, 2, -1.0 };
+		kernel.put(0, 0, kernel_v);
+		// Imgproc.filter2D(marte, filtrado, -1, kernel);
 		/**
 		 * 4°) Por fim o operador mmopen que eliminou grande parte dos ruídos
 		 * presentes na imagem - Com a finalidade de eliminar tais segmentos
@@ -90,41 +100,15 @@ public class MainApp {
 		 * estruturante utilizado foi o disco de raio 2.
 		 * 
 		 */
-		Mat kernel = Mat.ones(17, 17, CvType.CV_8UC1);
-		Mat dst = new Mat(img.size(), img.type());
-		Imgproc.morphologyEx(img, dst, Imgproc.MORPH_OPEN, kernel);
+		// Mat filtrado = new Mat();
+		// Mat kernel = new Mat(1, 3, CvType.CV_64F);
+		/// double[] kernel_v = { -1.0, 2, -1.0 };
+		// kernel.put(0, 0, kernel_v);
+		// Imgproc.filter2D(marte, filtrado, -1,kernel);
 		/**
-		 * 5°) Terminada a etapa de detecção, para validar a metodologia
+		 * /** 5°) Terminada a etapa de detecção, para validar a metodologia
 		 * desenvolvida, o resultado obtido foi sobreposto às imagens originais
 		 * 
-		 */
-
-		/*
-		 * Mat im2 = Imgcodecs.imread("/pdi-worker-one/images/imagem1conv.jpg");
-		 * Mat im3 = new Mat(); Core.absdiff(im1, im2, im3);
-		 * Imgcodecs.imwrite("/pdi-worker-one/images/subtracao.jpg", im3);
-		 * 
-		 * Mat mama = Imgcodecs.imread("/pdi-worker-one/images/imagem1.jpg");
-		 * Mat erodido = new Mat(); Imgproc.erode(mama, erodido, new Mat());
-		 * Imgcodecs.imwrite("/pdi-worker-one/images/erodido.png", erodido);
-		 * 
-		 * Mat dilatado = new Mat(); Imgproc.dilate(erodido, dilatado, new
-		 * Mat()); Imgcodecs.imwrite("/pdi-worker-one/images/dilatado.png",
-		 * dilatado); Imgcodecs.imwrite("/pdi-worker-one/images/dilatado1.png",
-		 * mama);
-		 * 
-		 * Mat sub1 = new Mat(); Mat sub2 = new Mat(); Core.absdiff(mama,
-		 * erodido, sub1); Core.absdiff(mama, dilatado, sub2);
-		 * 
-		 * Mat res = new Mat(); //thresh Imgproc.threshold(sub2, res, 14, 255,
-		 * 0);
-		 * 
-		 * Imgcodecs.imwrite("/pdi-worker-one/images/sub1.jpg", sub1);
-		 * Imgcodecs.imwrite("/pdi-worker-one/images/sub2.jpg", sub2);
-		 * Imgcodecs.imwrite("/pdi-worker-one/images/res.jpg", res);
-		 * 
-		 * Mat en = new Mat(); Imgproc.equalizeHist(mama, en);
-		 * Imgcodecs.imwrite("/pdi-worker-one/images/en.pgn", en);
 		 */
 	}
 }
